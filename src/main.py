@@ -44,7 +44,7 @@ if not calculate_max_points(player) == 21:  # no blackjack
         decision = input("\nMöchten Sie eine weitere Karte ziehen? [y/n]").lower()
         if not (decision == "y" or decision == "n"):
             continue
-        if decision == "n":
+        if decision == "n" or calculate_max_points(player) == 21:
             break
         if decision == "y":
             card = draw_card(cards)
@@ -56,6 +56,10 @@ if not calculate_max_points(player) == 21:  # no blackjack
 
     player[1] = calculate_max_points(player)
     print(player[1])
+
+    # player wins if he has triple seven and is removed from the game
+    if len(player[0]) == 3 and all(c.__get_value__() == 7 for c in player[0]):
+        win(money, calculate_winning(bet, player))
 
     # player loses if busted
     if player[1] > 21:
@@ -78,6 +82,8 @@ while dealer[1] <= 16:
             dealer[1] += 11
     else:
         dealer[1] += card.__get_value__()
+    if len(dealer[0]) == 2 and dealer[1] == 21:
+        blackjack_dealer == True
 
 print_score("Dealer", dealer)
 print(dealer[1])
@@ -90,6 +96,15 @@ elif dealer[1] > player[1]:  # dealer is closer to 21 then player
 
 elif player[1] > dealer[1]:  # player is closer to 21 then dealer
     win(money, calculate_winning(bet, player))
+
+elif blackjack_player and not blackjack_dealer:
+    win(money, calculate_winning(bet, player))
+
+elif blackjack_dealer and not blackjack_player:
+    lose(money)
+
+elif blackjack_dealer and blackjack_player:
+    draw(money, bet)
 
 elif dealer[1] == player[1]:  # draw
     draw(money, bet)

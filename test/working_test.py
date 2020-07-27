@@ -64,14 +64,22 @@ class CalculationTest(unittest.TestCase):
 
         money = calculate_winning(100, player)
 
-        self.assertEqual(money, 150)
+        self.assertEqual(money, 250)
 
     def test_calculate_winning_blackjack(self):
         player = [[Ace(Color.clubs), King(Color.clubs)], 21, 0]
 
         winnings = calculate_winning(100, player)
 
-        self.assertEqual(winnings, 150)
+        self.assertEqual(winnings, 250)
+
+    def test_21_points_but_no_special_calculates_normal_winning_amount(self):
+        player = [[Two(Color.hearts), Two(Color.hearts), Nine(Color.spades), Ace(Color.diamonds), Seven(Color.spades)],
+                  21, 0]
+
+        winnings = calculate_winning(50, player)
+
+        self.assertEqual(winnings, 100)
 
 
 if __name__ == '__main__':

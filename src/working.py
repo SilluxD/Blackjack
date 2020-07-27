@@ -59,9 +59,11 @@ def calculate_winning(bet, player):
         winning = 2 * bet
     elif player[1] == 21:
         if len(player[0]) == 3 and all(c.__get_value__() == 7 for c in player[0]):  # 777 win 3:2
-            winning = 3 * bet / 2
-        elif len(player[0]) == 2:  # blackjack
-            winning = 3 * bet / 2
+            winning = 3 * bet / 2 + bet
+        elif len(player[0]) == 2:  # blackjack 3:2
+            winning = 3 * bet / 2 + bet
+        else:
+            winning = 2 * bet  # no special win with 21 points
 
     return winning
 
@@ -73,7 +75,7 @@ def lose(money):
 
 def draw(money, bet):
     money += bet
-    print("\nSie haben unentschieden gespielt. Sie erhalten Ihren Einsatz zurück\nGuthaben:" + money)
+    print("\nSie haben unentschieden gespielt. Sie erhalten Ihren Einsatz zurück\nGuthaben:" + str(money))
     exit()
 
 
