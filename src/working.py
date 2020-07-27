@@ -1,7 +1,7 @@
 from itertools import islice
 import random
 
-from Blackjack.card import *
+from Blackjack.src.card import *
 
 
 def shuffled_deck(number):

@@ -1,4 +1,4 @@
-from Blackjack.working import *
+from Blackjack.src.working import *
 
 money = 500
 blackjack_player, blackjack_dealer = False, False

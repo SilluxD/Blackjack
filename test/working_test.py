@@ -1,6 +1,6 @@
 import unittest
 
-from Blackjack.working import *
+from Blackjack.src.working import *
 
 
 class DeckTest(unittest.TestCase):
