@@ -2,6 +2,7 @@ from Blackjack.src.working import *
 
 money = 500
 blackjack_player, blackjack_dealer = False, False
+insured, insurance_lane = False, 0
 
 # card-list and points for participants
 dealer = [[], 0]
@@ -25,6 +26,10 @@ card = draw_card(cards)
 dealer[0].append(card)
 if isinstance(card, Ace):
     dealer[1] += 10
+    # if the dealer's first card is an ace. the player can decide to insure himself against blackjack.
+    # The player's money will be deposited into the insurance
+    insured, insurance_lane = ask_insurance(money)
+    money -= insurance_lane
 dealer[1] += card.__get_value__()
 print_score("Dealer", dealer)
 
@@ -69,6 +74,10 @@ else:  # blackjack
     player[1] = 21
     player[2] = 0
     blackjack_player = True
+    if isinstance(dealer[0][0], Ace):  # player has Blackjack and dealer has only Ace -> possibility for 1:1 payout
+        dec, money = payout_option(bet, money)
+        if dec:
+            end_game()
 
 # dealer - turn
 while dealer[1] <= 16:
@@ -83,7 +92,9 @@ while dealer[1] <= 16:
     else:
         dealer[1] += card.__get_value__()
     if len(dealer[0]) == 2 and dealer[1] == 21:
-        blackjack_dealer == True
+        blackjack_dealer = True
+        if insured:
+            payout_insurance(insurance_lane, money)
 
 print_score("Dealer", dealer)
 print(dealer[1])
