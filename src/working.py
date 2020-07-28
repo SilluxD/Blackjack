@@ -112,7 +112,7 @@ def ask_insurance(money):
             return False, 0
         if decision == "y":
             while True:
-                amount = input("Wieviel möchten Sie in die Versicherung einzahlen? (Abbruch: [n])")
+                amount = input("Wieviel möchten Sie in die Versicherung einzahlen? (Abbruch: [n])").lower()
                 if amount == "n":
                     return False, 0
                 if not amount.isnumeric():
@@ -121,7 +121,6 @@ def ask_insurance(money):
                     amount = int(amount)
                     if amount > money or amount == 0:
                         continue
-                    money -= amount
                     return True, amount
     return False, 0
 
@@ -147,8 +146,48 @@ def surrender(money):
 
 def ask_surrender():
     while True:
-        decision = input("Sie haben die Möglichkeit aufzugeben. [y/n]")
+        decision = input("Sie haben die Möglichkeit aufzugeben. [y/n]").lower()
         if not (decision == "y" or decision == "n"):
+            continue
+        if decision == "n":
+            return False
+        if decision == "y":
+            return True
+
+
+def ask_bust_bet(money):
+    while not money == 0:
+        decision = input(
+            "Wollen Sie wetten, dass sich der Dealer überkauft? [y/n]").lower()
+        if not (decision == "n" or decision == "y"):
+            continue
+        if decision == "n":
+            return False, 0
+        if decision == "y":
+            while True:
+                amount = input("Um wieviel möchten Sie wetten? (Abbruch: [n])").lower()
+                if amount == "n":
+                    return False, 0
+                if not amount.isnumeric():
+                    continue
+                else:
+                    amount = int(amount)
+                    if amount > money or amount == 0:
+                        continue
+                    return True, amount
+    return False, 0
+
+
+def calculate_bust_winning(amount):
+    print("Der Dealer hat überzogen und Sie haben somit die Wette gewonnen!")
+    return amount * 5 / 2
+
+
+def ask_double_down(money, bet):
+    while money >= bet:
+        decision = input(
+            "Wollen Sie diese Runde ihren Einsaz verdoppeln? Danach können ziehen Sie noch eine Karte! [y/n]").lower()
+        if not (decision == "n" or decision == "y"):
             continue
         if decision == "n":
             return False
