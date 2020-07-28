@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from Blackjack.src.working import *
 
@@ -64,14 +65,68 @@ class CalculationTest(unittest.TestCase):
 
         money = calculate_winning(100, player)
 
-        self.assertEqual(money, 150)
+        self.assertEqual(money, 250)
 
     def test_calculate_winning_blackjack(self):
         player = [[Ace(Color.clubs), King(Color.clubs)], 21, 0]
 
         winnings = calculate_winning(100, player)
 
-        self.assertEqual(winnings, 150)
+        self.assertEqual(winnings, 250)
+
+    def test_21_points_but_no_special_calculates_normal_winning_amount(self):
+        player = [[Two(Color.hearts), Two(Color.hearts), Nine(Color.spades), Ace(Color.diamonds), Seven(Color.spades)],
+                  21, 0]
+
+        winnings = calculate_winning(50, player)
+
+        self.assertEqual(winnings, 100)
+
+
+class InsuranceTester(unittest.TestCase):
+
+    def test_asking_with_0_money_always_false(self):
+        b, n = ask_insurance(0)
+
+        self.assertEqual(b, False)
+        self.assertEqual(n, 0)
+
+    @patch('builtins.input', return_value="n")
+    def test_ask_insurance_reject(self, mock_input):
+        b, insurance_lane = ask_insurance(100)
+
+        self.assertEqual(b, False)
+        self.assertEqual(insurance_lane, 0)
+
+    @patch('builtins.input', side_effect=["y", "n"])
+    def test_ask_insurance_cancel_after_accepting(self, mock_input):
+        b, insurance_lane = ask_insurance(100)
+
+        self.assertEqual(b, False)
+        self.assertEqual(insurance_lane, 0)
+
+    @patch('builtins.input', side_effect=["y", "100"])
+    def test_ask_insurance_cancel_after_accepting(self, mock_input):
+        b, insurance_lane = ask_insurance(100)
+
+        self.assertEqual(b, True)
+        self.assertEqual(insurance_lane, 100)
+
+    @patch('builtins.input', return_value="y")
+    def test_payout_option_accepted_returns_right_amount(self, mock_input):
+        bet, money, insurance_lane = 50, 100, 150
+
+        b, cash = payout_option(bet, money, insurance_lane)
+
+        self.assertEqual(cash, 300)
+
+    @patch('builtins.input', return_value="n")
+    def test_payout_option_refused_returns_right_amount(self, mock_input):
+        bet, money, insurance_lane = 50, 100, 150
+
+        b, cash = payout_option(bet, money, insurance_lane)
+
+        self.assertEqual(cash, 100)
 
 
 if __name__ == '__main__':
