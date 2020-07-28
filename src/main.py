@@ -42,6 +42,11 @@ for i in range(2):
         player[2] += 1
 print_score("Spieler", player)
 
+# player can surrender after his first two cards
+if ask_surrender():
+    money += bet / 2
+    surrender(money)
+
 if not calculate_max_points(player) == 21:  # no blackjack
     # player - turn
     # draw cards but try not to hit 21 points (bust)

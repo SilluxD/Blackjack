@@ -138,3 +138,19 @@ def payout_option(bet, money, insurance_lane):
         if decision == "y":
             money += bet + insurance_lane
             return True, money
+
+
+def surrender(money):
+    print("Sie haben aufgegeben und die Hälfte des Einsatzes zurückbekommen.\nGuthaben:" + str(money))
+    end_game()
+
+
+def ask_surrender():
+    while True:
+        decision = input("Sie haben die Möglichkeit aufzugeben. [y/n]")
+        if not (decision == "y" or decision == "n"):
+            continue
+        if decision == "n":
+            return False
+        if decision == "y":
+            return True
