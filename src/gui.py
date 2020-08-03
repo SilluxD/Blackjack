@@ -1,5 +1,6 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtGui import QFont, QIntValidator
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMainWindow, QMessageBox
 
 from Blackjack.src.game import Game
 from Blackjack.src.working import *
@@ -7,9 +8,10 @@ from Blackjack.src.working import *
 font = QFont("Arial", 10)
 
 
-class Ui_MainWindow(object):
+class Ui_MainWindow(QMainWindow):
 
     def __init__(self):
+        super(Ui_MainWindow, self).__init__()
         self.onlyInt = QIntValidator()
         self.game = None
         self.MainWindow = QtWidgets.QMainWindow()
@@ -26,6 +28,8 @@ class Ui_MainWindow(object):
         self.label_dealer = QtWidgets.QLabel(self.centralwidget)
         self.label_money = QtWidgets.QLabel(self.centralwidget)
         self.label_bet = QtWidgets.QLabel(self.centralwidget)
+        self.label_insurance = QtWidgets.QLabel(self.centralwidget)
+        self.label_bust_bet = QtWidgets.QLabel(self.centralwidget)
         self.pass_button = QtWidgets.QPushButton(self.centralwidget)
         self.draw_button = QtWidgets.QPushButton(self.centralwidget)
         self.bet_input = QtWidgets.QLineEdit(self.centralwidget)
@@ -40,10 +44,11 @@ class Ui_MainWindow(object):
         self.MainWindow.resize(731, 523)
         self.centralwidget.setObjectName("centralwidget")
         # draw button
-        self.draw_button.setEnabled(True)
+        self.draw_button.setEnabled(False)
         self.draw_button.setGeometry(QtCore.QRect(610, 30, 75, 23))
         self.draw_button.setObjectName("draw_button")
         # pass button
+        self.pass_button.setEnabled(False)
         self.pass_button.setGeometry(QtCore.QRect(610, 60, 75, 23))
         self.pass_button.setObjectName("pass_button")
         # dealer text
@@ -55,6 +60,12 @@ class Ui_MainWindow(object):
         # bet text
         self.label_bet.setGeometry(QtCore.QRect(40, 35, 100, 21))
         self.label_bet.setObjectName("label_bet")
+        # insurance text
+        self.label_insurance.setGeometry(QtCore.QRect(140, 20, 100, 21))
+        self.label_insurance.setObjectName("label_insurance")
+        # bust bet text
+        self.label_bust_bet.setGeometry(QtCore.QRect(140, 35, 100, 21))
+        self.label_bust_bet.setObjectName("label_bust_bet")
         # player text
         self.label_player.setGeometry(QtCore.QRect(40, 250, 51, 20))
         self.label_player.setObjectName("label_player")
@@ -101,6 +112,8 @@ class Ui_MainWindow(object):
         self.label_player.setText(_translate("MainWindow", "Spieler:"))
         self.label_money.setText(_translate("MainWindow", "Guthaben: "))
         self.label_bet.setText(_translate("MainWindow", "Einsatz: "))
+        self.label_insurance.setText(_translate("MainWindow", "Einsatz: "))
+
         self.quit_button.setText(_translate("MainWindow", "Beenden"))
         self.bet_button.setText(_translate("MainWindow", "Start"))
         self.next_game_button.setText(_translate("MainWindow", "Neues Spiel"))
@@ -121,6 +134,33 @@ class Ui_MainWindow(object):
         self.activate_buttons()
         self.player_text_area.clear()
         self.dealer_text_area.clear()
+
+    def ask_surrender(self):
+        button_reply = QMessageBox.question(self, 'Aufgeben', "Möchten Sie aufgeben?",
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if button_reply == QMessageBox.Yes:
+            self.game.surrender()
+
+    def ask_bust_bet(self):
+        """Shows an input dialog for user input. Calls the method to bet on bust in the game.
+        """
+        text = "Sie haben die Möglichkeit darauf zu wetten, dass sich der Dealer überkauft." \
+               "\nGeben Sie einen Betrag ein, wenn Sie darauf wetten möchten:"
+        num, ok = QInputDialog.getInt(self, "Eingabe:", text, 50, 1, 100000, 10)
+
+        if ok:
+            self.game.bust(num)
+
+    def ask_insurance(self):
+        """Shows an input dialog for user input. Calls the method to insure a player in the game.
+        """
+        text = "Der Dealer hat ein Ass. Sie können sich gegen einen Blackjack versichern. " \
+               "\nGeben Sie einen Betrag ein, wenn Sie sich versichern möchten:"
+        num, ok = QInputDialog.getInt(self, "Eingabe:", text, 50, 1, 100000, 10)
+
+        if ok:
+            self.game.insure(num)
 
     def set_game(self, game):
         self.game = game
@@ -166,14 +206,18 @@ class Ui_MainWindow(object):
         elif n == 1:
             self.player_text_area.appendPlainText(text)
 
-    def print_bet_and_money(self, bet, money):
+    def print_money(self, money, bet, insurance, bust_bet):
         """Displays bet and money.
 
-        :param bet: current bet in the game.
         :param money: current money, the player has.
+        :param bet: current bet in the game.
+        :param insurance: current amount the player insured himself with.
+        :param bust_bet: the amout the player bet on the dealer busting (overdrawing)
         """
         self.label_bet.setText("Einsatz: " + str(bet))
         self.label_money.setText("Guthaben: " + str(money))
+        self.label_insurance.setText("Versichert: " + str(insurance))
+        self.label_bust_bet.setText("Bust Wette: " + str(bust_bet))
 
     def deactivate_buttons(self):
         self.deactivate_draw()

@@ -1,7 +1,7 @@
 from Blackjack.src.working import *
 
 
-# TODO special funktionen
+# TODO special funktionen (double down)
 
 def draw_card(deck):
     return deck.pop()
@@ -50,16 +50,20 @@ def shuffled_deck(no):
 
 
 class Game(object):
+    """Class object which stores the information and does the calculations necessary for a game."""
 
     def __init__(self, ui):
         self.ui = ui
         self.money = 500
         self.bet = 0
+        self.insurance_amount = 0
+        self.bust_bet = 0
 
         self.running = False
         self.player_blackjack = False
         self.dealer_blackjack = False
         self.pass_cards = False
+        self.insured = False
 
         self.dealer_cards = []
         self.dealer_points = 0
@@ -70,7 +74,7 @@ class Game(object):
 
         self.cards = shuffled_deck(6)
 
-        # self.blackjack_dealer = True
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
 
     def start(self, bet):
         """Player can make his bet for this round. Starts the game after the bet is done.
@@ -79,13 +83,21 @@ class Game(object):
             if self.bet_money(bet):
                 self.running = True
                 self.ui.deactivate_bet()
+                self.ui.ask_bust_bet()
+                self.ui.activate_draw()
+                self.ui.activate_pass()
                 self.initial_card()
 
     def next_game(self):
+        """Resets game variables to a state where a new game can be played."""
+        self.insurance_amount = 0
+        self.bust_bet = 0
+
         self.running = False
         self.player_blackjack = False
         self.dealer_blackjack = False
         self.pass_cards = False
+        self.insured = False
 
         self.dealer_cards = []
         self.dealer_points = 0
@@ -96,26 +108,27 @@ class Game(object):
 
         self.cards = shuffled_deck(6)
 
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
+
     def initial_card(self):
-        """The dealer draws his first card.
+        """The dealer draws his first card. If the first card is an ace,
+        the player can insure himself against a blackjack.
         """
         card = draw_card(self.cards)
         self.dealer_cards.append(card)
+        self.dealer_points += card.__get_value__()
+        self.ui.update_cards(0, self.dealer_cards)
+
         if isinstance(card, Ace):
             self.dealer_points += 10
-            # TODO insurance
-        #    # if the dealer's first card is an ace. the player can decide to insure himself against blackjack.
-        #    # The player's money will be deposited into the insurance
-        #    insured, insurance_lane = ask_insurance(money)
-        #    money -= insurance_lane
-        self.dealer_points += card.__get_value__()
-
-        self.ui.update_cards(0, self.dealer_cards)
+            self.ui.ask_insurance()
 
         self.first_player_cards()
 
     def first_player_cards(self):
-        """Player draws his first two cards. If a blackjack is scored, the player's turn will be ended
+        """Player draws his first two cards. If a blackjack is scored, the player's turn will be ended.
+        The player can surrender the game after he got his first two cards. This would en the game,
+        but give him a part of his bet back.
         """
         for i in range(2):
             card = draw_card(self.cards)
@@ -126,10 +139,12 @@ class Game(object):
 
         self.ui.update_cards(1, self.player_cards)
 
-        # blackjack with first two cards
+        # blackjack with first two cards, otherwise ask if the player wants to surrender
         if calculate_max_points(self.player_points, self.player_aces) == 21:
             self.player_blackjack = True
             self.ui.deactivate_draw()
+        else:
+            self.ui.ask_surrender()
 
     def draw(self):
         """Draws a card from the card stack. Adds points and counts Aces for further calculation.
@@ -170,6 +185,7 @@ class Game(object):
 
         if not overdraw:
             self.dealer_draw_phase()
+        else:
             self.game_results()
 
     def dealer_draw_phase(self):
@@ -194,16 +210,13 @@ class Game(object):
             # blackjack
             if len(self.dealer_cards) == 2 and self.dealer_points == 21:
                 strg += "\nBlackjack"
-                self.blackjack_dealer = True
+                self.dealer_blackjack = True
 
         self.ui.update_cards(0, self.dealer_cards)
         strg += "\nPunkte: " + str(self.dealer_points)
         self.ui.add_text_to_textfield(0, strg)
 
         self.game_results()
-
-        # if insured:
-        #   payout_insurance(insurance_lane, money)
 
     def bet_money(self, value):
         """Player bets an amount of his own money. Only works if he player has the necessary funds.
@@ -213,29 +226,80 @@ class Game(object):
         if isinstance(value, int) and 0 < value <= self.money:
             self.money -= value
             self.bet += value
-            self.ui.print_bet_and_money(self.bet, self.money)
+            self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
             return True
         return False
 
+    def bust(self, amount):
+        """Player can bet against the dealer busting (overdrawing). This amount is
+        subtracted from his money and added onto his bust bet.
+
+        :param amount: the amount of his money, the player wants to bet on the dealer busting
+        """
+        if amount > self.money or amount <= 0:
+            self.ui.ask_bust_bet()
+        else:
+            self.bust_bet = amount
+            self.money -= amount
+            self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
+
+    def insure(self, amount):
+        """Player can insure himself against a blackjack. The amount is
+        subtracted from his money and added onto the insurance amount.
+
+        :param amount: the amount of money, the player wants to insure himself with.
+        """
+        if amount > self.money or amount <= 0:
+            self.ui.ask_insurance()
+        else:
+            self.insured = True
+            self.money -= amount
+            self.insurance_amount = amount
+
+            self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
+
+    def surrender(self):
+        """Player can surrender to get half of his bet back."""
+        self.money += self.bet / 2
+        self.bet = 0
+        self.running = False
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
+        self.ui.activate_next_button()
+
     def game_results(self):
         """Evaluates the dealer's and the player's points and calls the fitting function based on this."""
-        if self.dealer_points > 21:  # dealer overdrew
-            self.win()
-        elif self.player_points > 21:  # player overdrew
+        if self.player_points > 21:  # player overdrew
             self.lose()
-        elif self.player_points > self.dealer_points:  # player closer to 21
+        elif self.dealer_points > 21:  # dealer overdrew
+            self.payout_bust_bet()
             self.win()
-        elif self.player_points < self.dealer_points:  # dealer closer to 21
-            self.lose()
-        elif self.player_blackjack and not self.dealer_blackjack:  # only player BJ
-            self.win()
-        elif not self.player_blackjack and self.dealer_blackjack:  # only dealer BJ
-            self.lose()
-        elif self.player_points == self.dealer_points:  # draw between player and dealer
-            self.undecided()
+        else:
+            if self.dealer_blackjack and self.insured:
+                self.payout_insurance()
+            if self.player_points > self.dealer_points:  # player closer to 21
+                self.win()
+            elif self.player_points < self.dealer_points:  # dealer closer to 21
+                self.lose()
+            elif self.player_blackjack and not self.dealer_blackjack:  # only player BJ
+                self.win()
+            elif not self.player_blackjack and self.dealer_blackjack:  # only dealer BJ
+                self.lose()
+            elif self.player_points == self.dealer_points:  # draw between player and dealer
+                self.undecided()
 
         self.running = False
         self.ui.activate_next_button()
+
+    def payout_bust_bet(self):
+        """Player gets the amount of money he bet on the dealer overdrawing back with a quote of 5:2."""
+        self.money += 5 * self.bust_bet / 2
+        self.bust_bet = 0
+
+    def payout_insurance(self):
+        """Player gets the amount of money he invested into the insurance back with a quote of 2:1."""
+        if self.insured:
+            self.money += self.insurance_amount * 2
+            self.insurance_amount = 0
 
     def win(self):
         """Player gets winnings based on his hand-cards."""
@@ -243,20 +307,20 @@ class Game(object):
         self.money += winnings
         self.bet = 0
 
-        self.ui.print_bet_and_money(self.bet, self.money)
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
 
     def undecided(self):
         """Player gets his bet back."""
         self.money += self.bet
         self.bet = 0
 
-        self.ui.print_bet_and_money(self.bet, self.money)
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
 
     def lose(self):
         """Player loses the money he bet this round."""
         self.bet = 0
 
-        self.ui.print_bet_and_money(self.bet, self.money)
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
 
     def calculate_winning(self):
         """Calculate winnings based on hand cards.
