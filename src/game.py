@@ -1,7 +1,7 @@
-from Blackjack.src.working import *
+from itertools import islice
+import random
+from Blackjack.src.card import *
 
-
-# TODO special funktionen (double down)
 
 def draw_card(deck):
     return deck.pop()
@@ -33,17 +33,17 @@ def shuffled_deck(no):
         for e in islice(Color, 4):
             cards.append(Ace(e))
             cards.append(King(e))
-            cards.append(Queen(e))
-            cards.append(Joker(e))
-            cards.append(Ten(e))
-            cards.append(Nine(e))
-            cards.append(Eight(e))
-            cards.append(Seven(e))
-            cards.append(Six(e))
-            cards.append(Five(e))
-            cards.append(Four(e))
-            cards.append(Three(e))
-            cards.append(Two(e))
+            # cards.append(Queen(e))
+            # cards.append(Joker(e))
+            # cards.append(Ten(e))
+        # cards.append(Nine(e))
+        #  cards.append(Eight(e))
+        #   cards.append(Seven(e))
+        #    cards.append(Six(e))
+    #     cards.append(Five(e))
+    #        cards.append(Four(e))
+    #       cards.append(Three(e))
+    #      cards.append(Two(e))
 
     random.shuffle(cards)
     return cards
@@ -58,12 +58,14 @@ class Game(object):
         self.bet = 0
         self.insurance_amount = 0
         self.bust_bet = 0
+        self.draw_limit = 0
 
         self.running = False
         self.player_blackjack = False
         self.dealer_blackjack = False
         self.pass_cards = False
         self.insured = False
+        self.doubled_down = False
 
         self.dealer_cards = []
         self.dealer_points = 0
@@ -92,12 +94,14 @@ class Game(object):
         """Resets game variables to a state where a new game can be played."""
         self.insurance_amount = 0
         self.bust_bet = 0
+        self.draw_limit = 0
 
         self.running = False
         self.player_blackjack = False
         self.dealer_blackjack = False
         self.pass_cards = False
         self.insured = False
+        self.doubled_down = False
 
         self.dealer_cards = []
         self.dealer_points = 0
@@ -129,6 +133,7 @@ class Game(object):
         """Player draws his first two cards. If a blackjack is scored, the player's turn will be ended.
         The player can surrender the game after he got his first two cards. This would en the game,
         but give him a part of his bet back.
+        The player may also double down his bet. He can only draw one more card.
         """
         for i in range(2):
             card = draw_card(self.cards)
@@ -145,12 +150,19 @@ class Game(object):
             self.ui.deactivate_draw()
         else:
             self.ui.ask_surrender()
+            if self.running and self.money >= self.bet:
+                self.ui.ask_double_down()
 
     def draw(self):
         """Draws a card from the card stack. Adds points and counts Aces for further calculation.
         Calls the function to update the UI. If the player hits 21 points or more drawing is deactivated.
         """
         if not self.pass_cards:
+            if self.doubled_down and self.draw_limit == 0:
+                self.ui.deactivate_draw()
+            elif self.doubled_down and self.draw_limit > 0:
+                self.draw_limit -= 1
+
             card = draw_card(self.cards)
             self.player_cards.append(card)
             self.player_points += card.__get_value__()
@@ -258,11 +270,21 @@ class Game(object):
 
             self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
 
+    def double_down(self):
+        """Player can double down to double his bet this round. He can only draw one more card this turn."""
+        self.doubled_down = True
+        self.draw_limit = 1
+        self.money -= self.bet
+        self.bet = self.bet * 2
+
+        self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
+
     def surrender(self):
         """Player can surrender to get half of his bet back."""
         self.money += self.bet / 2
         self.bet = 0
         self.running = False
+        self.ui.deactivate_buttons()
         self.ui.print_money(self.money, self.bet, self.insurance_amount, self.bust_bet)
         self.ui.activate_next_button()
 

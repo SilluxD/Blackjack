@@ -1,9 +1,8 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QFont, QIntValidator
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QMainWindow, QMessageBox
 
 from Blackjack.src.game import Game
-from Blackjack.src.working import *
 
 font = QFont("Arial", 10)
 
@@ -118,7 +117,7 @@ class Ui_MainWindow(QMainWindow):
         self.bet_button.setText(_translate("MainWindow", "Start"))
         self.next_game_button.setText(_translate("MainWindow", "Neues Spiel"))
 
-        self.quit_button.clicked.connect(end_game)
+        self.quit_button.clicked.connect(self.quit_clicked)
         self.draw_button.clicked.connect(self.draw_clicked)
         self.pass_button.clicked.connect(self.pass_clicked)
         self.bet_button.clicked.connect(self.start_clicked)
@@ -134,13 +133,6 @@ class Ui_MainWindow(QMainWindow):
         self.activate_buttons()
         self.player_text_area.clear()
         self.dealer_text_area.clear()
-
-    def ask_surrender(self):
-        button_reply = QMessageBox.question(self, 'Aufgeben', "Möchten Sie aufgeben?",
-                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if button_reply == QMessageBox.Yes:
-            self.game.surrender()
 
     def ask_bust_bet(self):
         """Shows an input dialog for user input. Calls the method to bet on bust in the game.
@@ -162,8 +154,29 @@ class Ui_MainWindow(QMainWindow):
         if ok:
             self.game.insure(num)
 
+    def ask_surrender(self):
+        """Shows input dialog for accepting or rejecting to surrender the game.
+                Calls the specific function in the game if the player wants to do so."""
+        button_reply = QMessageBox.question(self, 'Aufgeben', "Möchten Sie aufgeben?",
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if button_reply == QMessageBox.Yes:
+            self.game.surrender()
+
+    def ask_double_down(self):
+        """Shows input dialog for accepting or rejecting to double down.
+        Calls the specific function in the game if the player wants to do so."""
+        button_reply = QMessageBox.question(self, 'Verdoppeln', "Wollen Sie Ihren Einsatz verdoppeln?",
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if button_reply == QMessageBox.Yes:
+            self.game.double_down()
+
     def set_game(self, game):
         self.game = game
+
+    def quit_clicked(self):
+        sys.exit(app.exec_())
 
     def draw_clicked(self):
         self.game.draw()
