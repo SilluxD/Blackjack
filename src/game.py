@@ -26,7 +26,7 @@ def shuffled_deck(no):
     """Creates a big card-deck out of multiple standard card decks.
 
     :param no: number of card decks
-    :returns: the big card-deck created
+    :returns: the card-deck created
     """
     cards = []
     for i in range(no):
@@ -158,9 +158,9 @@ class Game(object):
         Calls the function to update the UI. If the player hits 21 points or more drawing is deactivated.
         """
         if not self.pass_cards:
-            if self.doubled_down and self.draw_limit == 0:
+            if self.doubled_down and self.draw_limit == 1:
                 self.ui.deactivate_draw()
-            elif self.doubled_down and self.draw_limit > 0:
+            elif self.doubled_down and self.draw_limit > 1:
                 self.draw_limit -= 1
 
             card = draw_card(self.cards)
