@@ -31,6 +31,9 @@ class Ui_MainWindow(QMainWindow):
         self.label_bust_bet = QtWidgets.QLabel(self.centralwidget)
         self.pass_button = QtWidgets.QPushButton(self.centralwidget)
         self.draw_button = QtWidgets.QPushButton(self.centralwidget)
+        self.surrender_button = QtWidgets.QPushButton(self.centralwidget)
+        self.double_down_button = QtWidgets.QPushButton(self.centralwidget)
+        self.insurance_button = QtWidgets.QPushButton(self.centralwidget)
         self.bet_input = QtWidgets.QLineEdit(self.centralwidget)
         self.bet_button = QtWidgets.QPushButton(self.centralwidget)
 
@@ -79,6 +82,18 @@ class Ui_MainWindow(QMainWindow):
         # quit button
         self.quit_button.setGeometry(QtCore.QRect(620, 450, 75, 23))
         self.quit_button.setObjectName("quit_button")
+        # surrender button
+        self.surrender_button.setGeometry(QtCore.QRect(620, 400, 75, 23))
+        self.surrender_button.setObjectName("surrender_button")
+        self.surrender_button.setVisible(False)
+        # double-down button
+        self.double_down_button.setGeometry(QtCore.QRect(620, 350, 75, 23))
+        self.double_down_button.setObjectName("double_down_button")
+        self.double_down_button.setVisible(False)
+        # insurance button
+        self.insurance_button.setGeometry(QtCore.QRect(620, 300, 75, 23))
+        self.insurance_button.setObjectName("insurance_button")
+        self.insurance_button.setVisible(False)
         # next game button
         self.next_game_button.setGeometry(QtCore.QRect(550, 450, 75, 23))
         self.next_game_button.setObjectName("next_game_button")
@@ -114,10 +129,16 @@ class Ui_MainWindow(QMainWindow):
         self.label_insurance.setText(_translate("MainWindow", "Einsatz: "))
 
         self.quit_button.setText(_translate("MainWindow", "Beenden"))
+        self.surrender_button.setText(_translate("MainWindow", "Aufgeben"))
+        self.double_down_button.setText(_translate("MainWindow", "Einsatz Verdoppeln"))
+        self.insurance_button.setText(_translate("MainWindow", "Versichern"))
         self.bet_button.setText(_translate("MainWindow", "Start"))
         self.next_game_button.setText(_translate("MainWindow", "Neues Spiel"))
 
         self.quit_button.clicked.connect(self.quit_clicked)
+        self.surrender_button.clicked.connect(self.surrender_clicked)
+        self.double_down_button.clicked.connect(self.double_down_clicked)
+        self.insurance_button.clicked.connect(self.insurance_clicked)
         self.draw_button.clicked.connect(self.draw_clicked)
         self.pass_button.clicked.connect(self.pass_clicked)
         self.bet_button.clicked.connect(self.start_clicked)
@@ -126,11 +147,15 @@ class Ui_MainWindow(QMainWindow):
 
         self.MainWindow.show()
 
+    def set_game(self, game):
+        self.game = game
+
     def reset_ui(self):
         """Called when restarting the game. Resets GUI elements to a state where the game is playable.
         """
         self.next_game_button.setEnabled(False)
         self.activate_buttons()
+        self.hide_optional_buttons()
         self.player_text_area.clear()
         self.dealer_text_area.clear()
 
@@ -144,9 +169,41 @@ class Ui_MainWindow(QMainWindow):
         if ok:
             self.game.bust(num)
 
+    def ask_surrender(self):
+        """Enables the fitting button to give the player the ability to surrender the game.
+        """
+        self.surrender_button.setVisible(True)
+        # button_reply = QMessageBox.question(self, 'Aufgeben', "Möchten Sie aufgeben?",
+        #                                   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        # if button_reply == QMessageBox.Yes:
+        #   self.game.surrender()
+
+    def ask_double_down(self):
+        """Enables the fitting button to give the player the ability to double down on his bet.
+        """
+        self.double_down_button.setVisible(True)
+
     def ask_insurance(self):
+        """Enables the fitting button to give the player the ability to insure themselves against a blackjack.
+        """
+        self.insurance_button.setVisible(True)
+
+    def quit_clicked(self):
+        sys.exit(app.exec_())
+
+    def surrender_clicked(self):
+        self.surrender_button.setVisible(False)
+        self.game.surrender()
+
+    def double_down_clicked(self):
+        self.double_down_button.setVisible(False)
+        self.game.double_down()
+
+    def insurance_clicked(self):
         """Shows an input dialog for user input. Calls the method to insure a player in the game.
         """
+        self.insurance_button.setVisible(False)
         text = "Der Dealer hat ein Ass. Sie können sich gegen einen Blackjack versichern. " \
                "\nGeben Sie einen Betrag ein, wenn Sie sich versichern möchten:"
         num, ok = QInputDialog.getInt(self, "Eingabe:", text, 50, 1, 100000, 10)
@@ -154,31 +211,8 @@ class Ui_MainWindow(QMainWindow):
         if ok:
             self.game.insure(num)
 
-    def ask_surrender(self):
-        """Shows input dialog for accepting or rejecting to surrender the game.
-                Calls the specific function in the game if the player wants to do so."""
-        button_reply = QMessageBox.question(self, 'Aufgeben', "Möchten Sie aufgeben?",
-                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if button_reply == QMessageBox.Yes:
-            self.game.surrender()
-
-    def ask_double_down(self):
-        """Shows input dialog for accepting or rejecting to double down.
-        Calls the specific function in the game if the player wants to do so."""
-        button_reply = QMessageBox.question(self, 'Verdoppeln', "Wollen Sie Ihren Einsatz verdoppeln?",
-                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if button_reply == QMessageBox.Yes:
-            self.game.double_down()
-
-    def set_game(self, game):
-        self.game = game
-
-    def quit_clicked(self):
-        sys.exit(app.exec_())
-
     def draw_clicked(self):
+        self.hide_optional_buttons()
         self.game.draw()
 
     def next_game_clicked(self):
@@ -191,6 +225,7 @@ class Ui_MainWindow(QMainWindow):
             self.game.start(int(input_amount))
 
     def pass_clicked(self):
+        self.hide_optional_buttons()
         self.draw_button.setEnabled(False)
         self.pass_button.setEnabled(False)
         self.game.pass_turn(False)
@@ -231,6 +266,13 @@ class Ui_MainWindow(QMainWindow):
         self.label_money.setText("Guthaben: " + str(money))
         self.label_insurance.setText("Versichert: " + str(insurance))
         self.label_bust_bet.setText("Bust Wette: " + str(bust_bet))
+
+    def hide_optional_buttons(self):
+        """Hides all of the optional buttons which should no longer be shown to the player.
+        Can be used when starting a new round."""
+        self.surrender_button.setVisible(False)
+        self.double_down_button.setVisible(False)
+        self.insurance_button.setVisible(False)
 
     def deactivate_buttons(self):
         self.deactivate_draw()
